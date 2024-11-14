@@ -1,0 +1,239 @@
+---
+title: "Intro to R - Day 2"
+author: "Daniel Fuller"
+date: "2023-11-23"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gtsummary)
+```
+
+## Intro to R Day 2
+
+### Importing data set in CSV file named `data1`
+
+Make sure you check your file extension. If you have an excel file use `readxl` package or the `GUI` 
+
+```{r}
+getwd()
+data1 <- read.csv("data1.csv", header=TRUE)
+```
+
+### to see first 10 observations
+
+```{r}
+head(data1,10)
+```
+
+### Importing data set in CSV file named ‘data2’
+
+```{r}
+data2 <- read.csv("data2.csv", header = TRUE)
+```
+
+### Merging data1 and data2
+
+First we want to create two artificial datasets to merge. We are just going to select a few variables from each then put the data back together.
+
+```{r}
+data1 <- dplyr::select(data1, id, sex, ethgrp, weight, age, cvd)
+data2 <- dplyr::select(data2, id, stroke, smoking, Cancer, ldl1, ldl2, gender)
+```
+
+### Joining data 
+
+In computer science the term is join. Some stat software uses the term merge. 
+
+```{r}
+data_merge <- dplyr::full_join(data1, data2) 
+
+data_merge1 <- dplyr::full_join(data1, data2, by = join_by(id))
+
+data_merge2 <- dplyr::full_join(data1, data2,by = join_by(id == id))
+```
+
+### importing test data
+
+```{r}
+getwd()
+test <- read.csv("test.csv", header = TRUE)
+head(test,10)
+```
+
+### Create categorial variable ‘agecat’ using age
+
+Here we are introducing three new things `%>%` (`pipe operator`), `mutate`, and `case_when`
+
+* `%>%` (`pipe operator`) = Signifies to run the analysis and move down to the next function. 
+* `mutate` = The verb for create a new variable from an old variable
+* `case_when`= An `if_else` type function 
+
+```{r}
+summary(test$age)
+
+test <- test %>% 
+          mutate(age_cat = case_when(
+            age < 45 ~ "<45",
+            age >= 45 & age < 50 ~ "45-49",
+            age >= 50 & age < 59 ~ "50-59",
+            age >= 60 & age < 65 ~ "60-64",  
+            TRUE ~ "65+"
+          ))
+
+count(test, age_cat)
+```
+
+### Writing a test to see if that worked
+
+```{r}
+table(test$age, test$age_cat)
+```
+
+
+### Check frequency distribution of a categorical variable
+
+#### Check frequency distribution of gender
+
+```{r}
+table(test$gender)
+```
+
+#### Cross tabulation of gender and stroke
+
+```{r}
+table(test$gender, test$stroke)
+```
+
+#### Chi-square test between gender and stroke
+
+```{r}
+chisq.test(test$gender, test$stroke)
+```
+
+# Fishers exact test
+
+```{r}
+fisher.test(test$gender, test$stroke)
+```
+
+#### First, we check if data follow Normal distribution
+#### Normality test (if p>0.05: data are normally distributed)
+####  Want to compare mean ages between male and female
+
+####  Check histogtam
+```{r}
+hist_age_gender <- ggplot(test, aes(age)) +
+  geom_histogram() + 
+  facet_wrap(~ gender)
+
+plot(hist_age_gender)
+```
+
+#### Shapiro test females
+
+```{r}
+test_data_female <- filter(test, gender == "f")
+shapiro.test(test_data_female$age)
+```
+
+#### Shapiro test males
+```{r}
+test_data_male <- filter(test, gender == "m")
+shapiro.test(test_data_male$age)
+```
+
+### t-test
+
+Lots of things we can do with t-tests. Generic formalution for many tests is `test_function`(`variable1` ~ `variable1`, data = `my_data`)
+
+```{r}
+help(t.test)
+t.test(age ~ gender, data = test, var.equal = FALSE)
+```
+
+### Check variance
+
+```{r}
+var.test(age ~ gender, data = test)
+```
+
+### Variances are equal based on the test
+```{r}
+t.test(age ~ gender, data = test, var.equal = TRUE)
+```
+
+### Non-parametric test if data are not normally distributed
+
+```{r}
+wilcox.test(age ~ gender, data = test)
+```
+
+### Paired t-test for two dependent samples
+
+```{r}
+t.test(test$ldl1, test$ldl2, paired = TRUE, var.equal = FALSE)
+```
+
+### Pearson correlation coefficient
+```{r}
+cor.test(test$ldl1, test$ldl2,  method = "pearson") 
+```
+
+### Spearman correlation coefficient
+```{r}
+cor.test(test$ldl1, test$ldl2,  method = "spearman") 
+```
+
+## Linear regression
+
+Conduct linear regression model between dependent and independent variables. Age is continuous, gender is categorical, ldl is continuous variable
+```{r}
+linear_model <- lm(age ~ as.factor(gender) + ldl1, data = test)
+summary(linear_model)
+
+gtsummary::tbl_regression(linear_model)
+```
+
+## Logistic regression
+
+```{r}
+logistic_model <- glm(Cancer ~ as.factor(gender) + ldl1 + smoking, data = test, family = "binomial")
+summary(logistic_model)
+```
+
+### Get ORs
+
+#### Old School Way
+```{r}
+exp(cbind(OR = coef(logistic_model), confint(logistic_model)))
+
+```
+
+#### New School Way
+```{r}
+tbl_regression(logistic_model, exponentiate = TRUE) 
+```
+
+### One-way ANOVA
+
+Pass arguments to aov() function for an ANOVA test
+
+```{r}
+one_anova <- aov(age ~ ethgrp, data = test)
+summary(one_anova)
+```
+
+### Non-parametric ANOVA
+```{r}
+kruskal.test(age ~ ethgrp, data = test)
+```
+
+
+
+
+
