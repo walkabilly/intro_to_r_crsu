@@ -80,11 +80,11 @@ sd(practice$age)
 # Where is the data going to go?
 
 getwd()
-setwd("/Users/dlf545/Dropbox/Teaching/USask/Intro to R/2023 Intro To R")
-
+setwd("/Users/location/...")   #### EDIT ME
+ 
 write.csv(practice, file = "practice.csv")
 
-test <- read.csv("test.csv", header = TRUE)
+test <- read.csv("data/test.csv", header = TRUE)
 
 head(test,10)
 
@@ -126,17 +126,12 @@ plot(scatter_ldl)
 
 ## scatter plot ldl1 and ldl2 with a regression line
 
-scatter_ldl <- ggplot(test, aes(x = ldl1, y = ldl2)) +
+scatter_ldl_lm <- ggplot(test, aes(x = ldl1, y = ldl2)) +
   geom_point() +
   geom_smooth(method = "lm")
 
-plot(scatter_ldl)
+plot(scatter_ldl_lm)
 
+### Save an image
 
-
-
-
-
-
-
-
+ggsave(scatter_ldl_lm.pdf, plot = scatter_ldl, dpi = 300)
