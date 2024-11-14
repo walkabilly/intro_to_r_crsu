@@ -98,7 +98,7 @@ summary(test)
 newdata <- dplyr::select(test, age, gender, id)
 str(newdata)
 
-newdata_female <- dplyr::filter(test, gender == "f")
+newdata_female <- dplyr::filter(test, gender == "f")   ## Sidebar on logical operators (https://bookdown.org/rwnahhas/IntroToR/logical.html)
 str(newdata_female)
 
 # to see histogram
