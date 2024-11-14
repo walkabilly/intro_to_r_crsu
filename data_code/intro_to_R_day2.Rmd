@@ -2,8 +2,8 @@
 title: "Intro to R - Day 2"
 author: "Daniel Fuller"
 output:
-  html_document: default
-  pdf_document: default
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(gtsummary)
 library(vtable)
+library(readxl)
+library(reportRmd)
+library(infer)
 ```
 
 ## Intro to R Day 2
@@ -19,9 +22,25 @@ library(vtable)
 
 Make sure you check your file extension. If you have an excel file use `readxl` package or the `GUI` 
 
+#### Tidyverse method
+
 ```{r}
-getwd()
-data1 <- read_csv("data/data1.csv")
+data1 <- read_csv("data1.csv")
+
+## Difference between Markdown and running code
+#data1 <- read_csv("data_code/data1.csv") 
+```
+
+#### Base R method
+
+```{r}
+data1_base <- read.csv("data1.csv", header = TRUE)
+```
+
+#### Excel file
+
+```{r}
+data1_excel <- read_excel("data1.xlsx")
 ```
 
 ### to see first 10 observations
@@ -33,7 +52,7 @@ head(data1,10)
 ### Importing data set in CSV file named ‘data2’
 
 ```{r}
-data2 <- read_csv("data/data2.csv")
+data2 <- read_csv("data2.csv")
 ```
 
 ### Merging data1 and data2
@@ -60,22 +79,33 @@ data_merge2 <- dplyr::full_join(data1, data2,by = join_by(id == id))
 ### importing test data
 
 ```{r}
-getwd()
-test <- read.csv("test.csv", header = TRUE)
+test <- read_csv("test.csv")
 head(test,10)
+glimpse(test)
+
+st(test) ## vtable package
+rm_covsum(data = test, 
+          covs = c('age', 'sex', 'stroke', 'Cancer', 'cvd'),
+          show.tests=TRUE)         ## reportRmd package
 ```
 
 ### Create categorial variable ‘agecat’ using age
 
 Here we are introducing three new things `%>%` (`pipe operator`), `mutate`, and `case_when`
 
-* `%>%` (`pipe operator`) = Signifies to run the analysis and move down to the next function. 
+* `%>%` or `|>` (`pipe operator`) = Signifies to run the analysis and move down to the next function. 
 * `mutate` = The verb for create a new variable from an old variable
 * `case_when`= An `if_else` type function 
 
 ```{r}
-summary(test$age)
+### Tidyverse Method
+test |> summary(age)
 
+### Base R Method
+summary(test, age)
+```
+
+```{r}
 test <- test %>% 
           mutate(age_cat = case_when(
             age < 45 ~ "<45",
@@ -84,16 +114,25 @@ test <- test %>%
             age >= 60 & age < 65 ~ "60-64",  
             TRUE ~ "65+"
           ))
+```
 
+```{r}
+### Tidyverse Method
+test %>% count(age_cat)
+
+### Base R Method
 count(test, age_cat)
 ```
 
 ### Writing a test to see if that worked
 
 ```{r}
+### Tidyverse Method
+#test %>% table(age, age_cat)
+
+### Base R Method
 table(test$age, test$age_cat)
 ```
-
 
 ### Check frequency distribution of a categorical variable
 
@@ -111,7 +150,14 @@ table(test$gender, test$stroke)
 
 #### Chi-square test between gender and stroke
 
+Lots of the previous existing packages work with traditional coding rather than Tidyverse style. Here we are going to work on some of those older methods. If you want to use the newer versions use the [infer](https://infer.tidymodels.org/index.html) package. 
+
 ```{r}
+### Tidyverse
+test$stroke_factor <- as.factor(test$stroke)
+chisq_test(test, gender ~ stroke_factor)
+
+### Base R
 chisq.test(test$gender, test$stroke)
 ```
 
@@ -229,11 +275,7 @@ summary(one_anova)
 ```
 
 ### Non-parametric ANOVA
+
 ```{r}
 kruskal.test(age ~ ethgrp, data = test)
 ```
-
-
-
-
-

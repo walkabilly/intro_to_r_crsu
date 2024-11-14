@@ -29,7 +29,7 @@ By the completion of this course, students will be expected to
     * Day 2 R script: [data_2_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/code/day_2_script.R)
     * Day 2 RMarkdown: [intro_to_R_day2](https://github.com/walkabilly/intro_to_r_crsu/blob/main/code/intro_to_R_day2.Rmd)
     * Day 3 RMarkdown: [coming soon]()
-* Slides
+* Folder for [Slides]()
     * [Day 1 Slides]()
     * [Day 2 Slides]()
     * [Day 3 Slides]()
