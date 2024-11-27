@@ -47,7 +47,7 @@ data_1_2 <- bind_rows(data1, data2)
 We can also do more advanced things like select and bind all of the files in a folder with a specific filename or file extension. 
 
 ```{r}
-paths <- list.files(pattern = "[.]csv$", full.names = TRUE)
+paths <- list.files(pattern = "data.*\\.csv", full.names = TRUE)
 paths
 
 files <- map(paths, read_csv)
@@ -59,7 +59,15 @@ data_all <- list_rbind(files)
 
 2. Join by ID
 
+If you have 2 datasets with different data that you want to join you can use different join methods. These terms are from computer science. `full_join`, `left_join`, `right_join`, etc. 
 
+```{r}
+names_data <- read_csv("names.csv")
+glimpse(names_data)
+
+data_all <- left_join(data_all, names_data, by = join_by(id))
+table(data_all$parent)
+```
 
 
 ## Data Viz
@@ -176,15 +184,15 @@ One of the best things about ggplot2 is the ability to easily *group_by* like we
 Colouring by gender
 ```{r}
 scatter_plot_gender <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
-                  geom_point(alpha = 0.2) + 
-                  labs(x = "Age", y = "LDL Cholesterol", fill = "Gender") 
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
+                  labs(x = "Age", y = "LDL Cholesterol", fill = "Stroke") 
 plot(scatter_plot_gender)
 ```
 
 Faceting by gender
 ```{r}
 scatter_plot_gender <- ggplot(data_all, aes(x = age, y = ldl1)) + 
-                  geom_point(alpha = 0.2) + 
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
                   labs(x = "Age", y = "LDL Cholesterol") +
                   facet_wrap(~ stroke_recode)
 plot(scatter_plot_gender)
@@ -202,8 +210,8 @@ There are two themes I use regularly; *classic* and *bw*. Classic provides a cle
 
 ```{r}
 scatter_plot_bw <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
-                  geom_point(alpha = 0.2) + 
-                  labs(x = "Age", y = "LDL Cholesterol", colour = "Gender") +
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
+                  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") +
                   theme_bw()
 plot(scatter_plot_bw)
 ```
@@ -212,8 +220,8 @@ plot(scatter_plot_bw)
 
 ```{r}
 scatter_plot_classic <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
-                  geom_point(alpha = 0.2) + 
-                  labs(x = "Age", y = "LDL Cholesterol", colour = "Gender") +
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
+                  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") +
                   theme_classic()
 plot(scatter_plot_classic)
 ```
@@ -224,9 +232,9 @@ There are lots of default colours in R. The basic functions are *scale_colour* a
 
 ```{r}
 scatter_plot_gender_brewer <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
-                  geom_point(alpha = 0.2) + 
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
                   scale_colour_manual(values = c("#E69F00", "#56B4E9")) +
-                  labs(x = "Age", y = "LDL Cholesterol", colour = "Gender") 
+                  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") 
 plot(scatter_plot_gender_brewer)
 ```
 
@@ -236,7 +244,6 @@ Someone asked about heat maps so here is an example. A heatmap is a row and colu
 
 ```{r}
 data_heat <- data_all %>% select(id, ldl1, ldl2)
-
 
 data_heat <- data_heat %>%
                 dplyr::mutate(id = row_number()) %>%
@@ -342,13 +349,9 @@ For linear regression models there are a number of assumptions we want to check.
 
 ```{r}
 plot(model_final)
-
-#### Include the TidyR for this. 
 ```
 
 ## Multilevel Models
-
-
 
 ```{r, message = FALSE, warning = FALSE}
 ldl1_age <- ggplot(data_all, aes(x = age, y = ldl1)) + 
@@ -387,18 +390,6 @@ summary(lme_1)
 
 ```{r}
 lme_1 <- lme(ldl1 ~ 1, random = ~ 1 | parent, data = data_all)
-
-
-intercepts <- lme_1[["coefficients"]][["random"]][["health_region"]] + lme_1[["coefficients"]][["fixed"]][["(Intercept)"]]
-sort(intercepts) 
-```
-
-## Plot the distribution of intercepts
-
-```{r}
-ldl1_parent <- ggplot() + 
-              geom_histogram(aes(intercepts))
-plot(ldl1_parent)
 ```
 
 ## Adding level 1 covariates
@@ -412,8 +403,6 @@ summary(lme_2)
 
 ```{r}
 data_all$fitted_lm <- predict(lme_2)
-
-cchs_small <- subset(cchs, geodpmf < 12000)
 
 fitted_plot <- ggplot(data_all, aes(x = age, y = ldl1, colour = parent)) + 
                         geom_point() + 
@@ -453,15 +442,16 @@ write.csv(data4, "data4.csv")
 ```{}
 names_data <- NULL
 
-names_data$names <- randomNames(800, 
+names_data$id <- seq(from = 1, to = 800)
+
+names_data$parent <- randomNames(800, 
                       which.names="first", 
                       sample.with.replacement=TRUE,
                       return.complete.data=FALSE) 
-names_data$id <- seq(from = 1, to = 800)
 
 names_data <- as.data.frame(names_data)
 
-write.csv(names_data, "names.data.csv")
+write.csv(names_data, "names.csv")
 ```
 
 
