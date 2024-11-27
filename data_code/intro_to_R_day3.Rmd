@@ -1,0 +1,34 @@
+---
+title: "Intro to R - Day 3"
+author: "Daniel Fuller"
+output:
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gtsummary)
+library(vtable)
+library(readxl)
+library(reportRmd)
+library(infer)
+```
+
+## Intro to R Day 3
+
+This session will focus more on data visualization, regression, and some other key resources for R users. The focus is on helping different R as a statistical programming language for closed source resources like Stata, SAS, and SPSS. We will work through some applications of packages that I think would be game-changers for many peoples statistics workflows. 
+
+### Data Visualization
+
+
+### More advanced regression 
+
+
+### cancensus 
+
+
+### Cool packages and resources 
+
+

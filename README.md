@@ -34,3 +34,16 @@ By the completion of this course, students will be expected to
     * [Day 1 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day1.pdf)
     * [Day 2 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day2.pdf)
     * [Day 3 Slides]()
+
+## Helpful packages and places
+
+* CRAN Task Views
+* https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse_pt2
+* Tidyverse
+* Tidymodels
+* Long to wide and back again 
+* Spatial data analysis
+* Canadian census data
+* BBC Code Book [https://bbc.github.io/rcookbook/](https://bbc.github.io/rcookbook/) 
+* Keiran Healey's book _Data Visualization_ [https://kieranhealy.org/publications/dataviz/](https://kieranhealy.org/publications/dataviz/) 
+* `socviz` package [https://kjhealy.github.io/socviz/](https://kjhealy.github.io/socviz/)
