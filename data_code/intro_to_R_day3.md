@@ -6,6 +6,17 @@ output:
 ---
 
 
+``` r
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gtsummary)
+library(sjPlot)
+library(interactions)
+library(cardx)
+library(mice)
+library(nlme)
+library(randomNames)
+```
 
 ## Data Wrangling 
 
