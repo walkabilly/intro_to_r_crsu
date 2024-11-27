@@ -29,21 +29,22 @@ By the completion of this course, students will be expected to
     * Day 1 R script: [data_1_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/code/day_1_script.R)
     * Day 2 R script: [data_2_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/code/day_2_script.R)
     * Day 2 RMarkdown: [intro_to_R_day2](https://github.com/walkabilly/intro_to_r_crsu/blob/main/code/intro_to_R_day2.Rmd)
-    * Day 3 RMarkdown: [coming soon]()
+    * Day 3 RMarkdown: [intro_to_R_day3](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day3.Rmd)
 * Folder for [Slides](https://github.com/walkabilly/intro_to_r_crsu/tree/main/slides)
     * [Day 1 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day1.pdf)
     * [Day 2 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day2.pdf)
-    * [Day 3 Slides]()
 
 ## Helpful packages and places
 
-* CRAN Task Views
-* https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse_pt2
-* Tidyverse
-* Tidymodels
-* Long to wide and back again 
-* Spatial data analysis
-* Canadian census data
+* CRAN Task Views [https://cran.r-project.org/web/views/](https://cran.r-project.org/web/views/)
+* UCLA Guides [https://stats.oarc.ucla.edu/other/dae/](https://stats.oarc.ucla.edu/other/dae/)
+* From Base R to Tidyverse [https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse](https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse)
+* Tidyverse [https://www.tidyverse.org/](https://www.tidyverse.org/)
+* Tidymodels [https://www.tidymodels.org/](https://www.tidymodels.org/)
+* Long to wide and back again [https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse_pt2](https://rebeccabarter.com/blog/2019-08-05_base_r_to_tidyverse_pt2)
+* Spatial data analysis [https://r.geocompx.org/](https://r.geocompx.org/)
+* Canadian census data [https://mountainmath.github.io/cancensus/index.html](https://mountainmath.github.io/cancensus/index.html)
 * BBC Code Book [https://bbc.github.io/rcookbook/](https://bbc.github.io/rcookbook/) 
 * Keiran Healey's book _Data Visualization_ [https://kieranhealy.org/publications/dataviz/](https://kieranhealy.org/publications/dataviz/) 
 * `socviz` package [https://kjhealy.github.io/socviz/](https://kjhealy.github.io/socviz/)
+
