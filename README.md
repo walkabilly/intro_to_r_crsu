@@ -20,7 +20,7 @@ By the completion of this course, students will be expected to
 
 ## Course material
 
-* Download the syllabus [here](https://github.com/walkabilly/intro_to_r_crsu/blob/main/Syllabus%20Template_R_2024_final.pdf)
+* Download the syllabus [here](https://github.com/walkabilly/intro_to_r_crsu/blob/main/Syllabus%20Template_R_2025_final.pdf)
 * Folder for [Data](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data)
     * [data1.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data/data1.csv) and [data1.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data/data1.xlsx)
     * [data2.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data/data2.csv) and [data2.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data/data2.xlsx)
