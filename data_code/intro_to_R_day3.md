@@ -973,7 +973,7 @@ summary(lme_1)
 ## Random effects:
 ##  Formula: ~1 | parent
 ##          (Intercept) Residual
-## StdDev: 0.0001973128 1.616868
+## StdDev: 0.0001064242 1.616868
 ## 
 ## Fixed effects:  ldl1 ~ 1 
 ##                Value  Std.Error  DF  t-value p-value
@@ -1012,7 +1012,7 @@ summary(lme_2)
 ## Random effects:
 ##  Formula: ~1 | parent
 ##          (Intercept) Residual
-## StdDev: 7.135654e-05 1.618026
+## StdDev: 0.0001815086 1.618026
 ## 
 ## Fixed effects:  ldl1 ~ age + stroke_recode + smoking 
 ##                      Value  Std.Error  DF  t-value p-value
