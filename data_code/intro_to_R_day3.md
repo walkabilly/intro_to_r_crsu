@@ -7,22 +7,283 @@ output:
 
 
 ``` r
-knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+```
+
+```
+## Warning: package 'ggplot2' was built under R version 4.5.2
+```
+
+```
+## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.4     ✔ readr     2.1.5
+## ✔ forcats   1.0.0     ✔ stringr   1.5.2
+## ✔ ggplot2   4.0.1     ✔ tibble    3.3.0
+## ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+## ✔ purrr     1.1.0     
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+```
+
+``` r
+### Reading in other datasets
+library(haven)
+library(readxl)
+library(httpuv)
+library(googlesheets4)
+
+### Missing data
+library(visdat)
+library(naniar)
+
+### Functions for visualizing regression
 library(gtsummary)
 library(sjPlot)
+```
+
+```
+## 
+## Attaching package: 'sjPlot'
+## 
+## The following object is masked from 'package:ggplot2':
+## 
+##     set_theme
+```
+
+``` r
 library(interactions)
 library(cardx)
-library(mice)
-library(nlme)
 library(randomNames)
 ```
 
-## Data Wrangling 
+## Reading other data sources 
+
+From the `haven` documentation: [https://haven.tidyverse.org/reference/index.html](https://haven.tidyverse.org/reference/index.html)
+
+### Labelled vectors
+
+SAS, SPSS, and Stata share a simply concept of “labelled” vectors, which are similar to factors but a little more general. The `labelled()` class provides a natural representaion in R.
+
+`labelled_spss()`
+    Labelled vectors for SPSS
+
+`labelled()` `is.labelled()`
+    Create a labelled vector.
+
+`print_labels()`
+    Print the labels of a labelled vector
+
+`as_factor(<data.frame>)` `as_factor(<haven_labelled>)` `as_factor(<labelled>)`
+    Convert labelled vectors to factors
+
+### Tagged missing values
+
+Both SAS and Stata supported tagged missing values, where a missing value can have multiple “types”, given by an letter from A through Z. `tagged_na()` provides a convenient way of representing these types of missing values in R by taking advantage of the binary representation of NA.
+
+`tagged_na()` `na_tag()` `is_tagged_na()` `format_tagged_na()` `print_tagged_na()`
+    "Tagged" missing values
+
+Remove attributes
+
+__There are a number of SPSS/SAS/Stata features that have no direct equivalent in R.__ Haven preserves them so you can choose what do with them. To simply eliminate them, use one of the zap functions.
+
+`zap_empty()`
+    Convert empty strings into missing values
+
+`zap_formats()`
+    Remove format attributes
+
+`zap_label()`
+    Zap variable labels
+
+`zap_labels()`
+    Zap value labels
+
+`zap_missing()`
+    Zap special missings to regular R missings
+
+`zap_widths()`
+    Remove display width attributes 
+
+### Read SPSS Data
 
 
 ``` r
-data <- read_csv("data1.csv")
+data_spss <- read_sav("data_spss.sav")
+```
+
+### Read SAS Data
+
+SAS has two data formats, `xpt` and `sas7bdat` formats. Here we are only going to how the `xpt` method but it's very similar. 
+
+
+``` r
+data_sas <- read_xpt("data_sas.xpt")
+```
+
+### Read Stata
+
+
+``` r
+data_stata <- read_dta("data_stata.dta")
+```
+
+### Read Excel
+
+This is from the `readxl` package. Extremely powerful for reading in excel files. 
+
+
+``` r
+data_excel <- read_excel("data_all.xlsx", sheet = "data_all")
+```
+
+### Read Google Sheets
+
+To get Google Sheets package to work we need to authenticate our Google Drive. The sheet needs to be shared to this can get a bit complicated. If it's in your own Google Sheets that's easy enough. 
+
+##### NOT RUN
+
+```{}
+data_google <- read_sheet("https://docs.google.com/spreadsheets/d/1vGwx9rpdKX--wqS0LShyXbwm_GSG-tiNuiBdwSk7xPY/edit?gid=391891818#gid=391891818")
+```
+
+## Missing Data
+
+So far we have not included any missing data. In the real world there will definitely by missingness in your data. R handles missing data a bit differently from the other common software. 
+
+
+``` r
+data_missing <- read_csv("data_missing.csv")
+```
+
+```
+## Rows: 800 Columns: 11
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: ","
+## dbl (11): id, sex, ethgrp, weight, age, cvd, stroke, smoking, Cancer, ldl1, ...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+```
+
+## Ways R encodes missing(ish) data
+
+### NaN and Inf are related to NA.
+
+#### NaN
+
+NaN represents `Not a Number`. NaN can be generated, for example, by taking the log of a negative number. They can be tested for with is.nan()
+
+
+``` r
+x <- log(c(1, -1, NA))
+```
+
+```
+## Warning in log(c(1, -1, NA)): NaNs produced
+```
+
+``` r
+x
+```
+
+```
+## [1]   0 NaN  NA
+```
+
+``` r
+is.nan(x)
+```
+
+```
+## [1] FALSE  TRUE FALSE
+```
+
+#### Inf
+
+Inf and -Inf represent positive and negative infinite numbers respectively. These can be generated, for example, by dividing by zero, and tested for with is.infinite()
+
+
+``` r
+y <- c(-Inf, 0, Inf)
+is.infinite(y)
+```
+
+```
+## [1]  TRUE FALSE  TRUE
+```
+
+### Comparison of missing types
+
+The test is.finite() it TRUE if the value is numeric and not NA, NaN, Inf or -Inf.
+
+ value |	is.na |	is.nan |	is.infinite |	is.finite 
+ ----- | ------ | ------ | ------ 
+ 1 	| FALSE |	FALSE |	FALSE |	TRUE
+ NA 	| TRUE |	FALSE |	FALSE |	FALSE
+ NaN |	TRUE |	TRUE |	FALSE |	FALSE
+ Inf |	FALSE |	FALSE |	TRUE |	FALSE
+ -Inf |	FALSE |	FALSE |	TRUE |	FALSE
+
+## Missing data analysis
+
+#### We want a quick summary of missing data for each variable. This function is from the `naniar` package. We have lots of variables so let's save this as a table that we inspect a little easier. 
+
+
+``` r
+missing_table <- miss_var_summary(data_missing)
+missing_table
+```
+
+```
+## # A tibble: 11 × 3
+##    variable n_miss pct_miss
+##    <chr>     <int>    <num>
+##  1 id           80       10
+##  2 sex          80       10
+##  3 ethgrp       80       10
+##  4 weight       80       10
+##  5 age          80       10
+##  6 cvd          80       10
+##  7 stroke       80       10
+##  8 smoking      80       10
+##  9 Cancer       80       10
+## 10 ldl1         80       10
+## 11 ldl2         80       10
+```
+
+Now that we have a more manageable dataframe let's visualize missing with the package `visdat` to quickly visualize the entire dataframe and check missing.
+
+
+``` r
+vis_dat(data_missing)
+```
+
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+We have fixed the problem with logical variables and those with too much missing to do anything with really. Now let's move on to what we can actually do. 
+
+## You got some SPSS data! 
+
+When you are dealing with missing values, you might want to replace values with a missing values (NA). This is useful in cases when you know the origin of the data and can be certain which values should be missing. For example, you might know that all values of “N/A”, “N A”, and “Not Available”, or -99, or -1 are supposed to be missing.
+
+naniar provides functions to specifically work on this type of problem using the function replace_with_na. This function is the compliment to tidyr::replace_na, which replaces an NA value with a specified value, whereas naniar::replace_with_na replaces a value with an NA:
+
+* `tidyr::replace_na`: Missing values turns into a value (NA –> -99)
+* `naniar::replace_with_na`: Value becomes a missing value (-99 –> NA)
+
+
+## Data Wrangling 
+
+Let's say we have a bunch of different datasets we need to combine together in some way. There are many ways to do this. The cheat sheet for `dplyr` can help with this. It provides nice visuals if you are trying to combine datasets. Here is a snip of it. The full cheat sheet is available here [https://rstudio.github.io/cheatsheets/html/data-transformation.html](https://rstudio.github.io/cheatsheets/html/data-transformation.html)
+
+![](cheat_sheet.png)
+
+
+``` r
+data1 <- read_csv("dataset1.csv")
 ```
 
 ```
@@ -33,27 +294,6 @@ data <- read_csv("data1.csv")
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-```
-
-``` r
-cols <- c("id", "sex", "ethgrp", "cvd", "stroke", "smoking", "Cancer")
-data <- data %>% mutate_at(cols, factor)
-str(data)
-```
-
-```
-## tibble [200 × 11] (S3: tbl_df/tbl/data.frame)
-##  $ id     : Factor w/ 200 levels "1","2","3","4",..: 1 2 3 4 5 6 7 8 9 10 ...
-##  $ sex    : Factor w/ 2 levels "0","1": 2 2 1 2 1 2 1 2 1 2 ...
-##  $ ethgrp : Factor w/ 3 levels "1","2","3": 3 3 2 2 2 2 2 2 3 1 ...
-##  $ weight : num [1:200] 34 39 63 44 47 47 57 39 48 47 ...
-##  $ age    : num [1:200] 39 42 63 39 45 40 47 44 44 53 ...
-##  $ cvd    : Factor w/ 2 levels "0","1": 1 1 2 1 2 1 2 1 2 1 ...
-##  $ stroke : Factor w/ 2 levels "0","1": 1 2 2 2 2 2 2 1 2 2 ...
-##  $ smoking: Factor w/ 2 levels "0","1": 1 1 1 2 1 2 1 1 1 1 ...
-##  $ Cancer : Factor w/ 2 levels "0","1": 2 2 1 1 1 2 2 1 1 1 ...
-##  $ ldl1   : num [1:200] 107 110 111 107 107 108 108 109 110 108 ...
-##  $ ldl2   : num [1:200] 106 109 109 108 106 106 109 109 107 110 ...
 ```
 
 ### Joining datasets
@@ -64,7 +304,7 @@ If we want to stack two datasets we need to use the `bind` set of functions. We 
 
 
 ``` r
-data1 <- read_csv("data1.csv")
+data2 <- read_csv("dataset2.csv")
 ```
 
 ```
@@ -78,7 +318,7 @@ data1 <- read_csv("data1.csv")
 ```
 
 ``` r
-data2 <- read_csv("data2.csv")
+data3 <- read_csv("dataset3.csv")
 ```
 
 ```
@@ -91,23 +331,47 @@ data2 <- read_csv("data2.csv")
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
-Data1 and Data2 have the some number and information in the columns but they are not together. We can join them using `bind_rows`. 
+``` r
+data4 <- read_csv("dataset4.csv")
+```
+
+```
+## Rows: 200 Columns: 11
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: ","
+## dbl (11): id, sex, ethgrp, weight, age, cvd, stroke, smoking, Cancer, ldl1, ...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+```
+
+Data1 and Data2 have the some number and information in the columns but they are not together. We can join them using `bind_rows`. Some notes on this
+
+* All variables need to have the same name
+* Variables with the same name need to have the same type (eg. numeric)
+    * If you have a variable names `id` and it's factor in one dataset and numeric in the other the function will not work
+* All variables need to be in all datasets
+    * If you have a `cholestrol` variable that is only in one dataset the function will not work
 
 
 ``` r
-data_1_2 <- bind_rows(data1, data2)
+data_all <- bind_rows(data1, data2, data3, data4)
+
+#write_csv(data_all, "data_all.csv")
 ```
+
+#### Advanced
 
 We can also do more advanced things like select and bind all of the files in a folder with a specific filename or file extension. 
 
 
 ``` r
-paths <- list.files(pattern = "data.*\\.csv", full.names = TRUE)
+paths <- list.files(pattern = "dataset.*\\.csv", full.names = TRUE)
 paths
 ```
 
 ```
-## [1] "./data1.csv" "./data2.csv" "./data3.csv" "./data4.csv"
+## [1] "./dataset1.csv" "./dataset2.csv" "./dataset3.csv" "./dataset4.csv"
 ```
 
 ``` r
@@ -154,7 +418,35 @@ length(files)
 ```
 
 ``` r
-data_all <- list_rbind(files)
+data_test <- list_rbind(files)
+summary(data_test)
+```
+
+```
+##        id             sex            ethgrp         weight           age       
+##  Min.   :  1.0   Min.   :0.000   Min.   :1.00   Min.   :28.00   Min.   :26.00  
+##  1st Qu.:200.0   1st Qu.:0.000   1st Qu.:2.00   1st Qu.:44.00   1st Qu.:44.00  
+##  Median :399.5   Median :1.000   Median :2.00   Median :50.00   Median :53.00  
+##  Mean   :399.8   Mean   :0.585   Mean   :1.99   Mean   :52.23   Mean   :51.89  
+##  3rd Qu.:599.2   3rd Qu.:1.000   3rd Qu.:2.00   3rd Qu.:60.00   3rd Qu.:59.50  
+##  Max.   :799.0   Max.   :1.000   Max.   :3.00   Max.   :76.00   Max.   :74.00  
+##       cvd             stroke          smoking           Cancer      
+##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000  
+##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000  
+##  Median :0.0000   Median :1.0000   Median :0.0000   Median :1.0000  
+##  Mean   :0.4088   Mean   :0.6813   Mean   :0.4425   Mean   :0.5025  
+##  3rd Qu.:1.0000   3rd Qu.:1.0000   3rd Qu.:1.0000   3rd Qu.:1.0000  
+##  Max.   :1.0000   Max.   :1.0000   Max.   :1.0000   Max.   :1.0000  
+##       ldl1            ldl2      
+##  Min.   :104.0   Min.   :106.0  
+##  1st Qu.:106.0   1st Qu.:107.0  
+##  Median :108.0   Median :108.0  
+##  Mean   :107.7   Mean   :107.8  
+##  3rd Qu.:109.0   3rd Qu.:109.0  
+##  Max.   :111.0   Max.   :110.0
+```
+
+``` r
 #write_csv(data_all, "data_all.csv")
 ```
 
@@ -452,7 +744,6 @@ table(data_all$parent)
 ##              1              2              1              1
 ```
 
-
 ## Data Viz
 
 ### 1. ggplot2 General
@@ -500,7 +791,7 @@ bar_stroke <- ggplot(data_all, aes(stroke_recode)) +
 plot(bar_stroke)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 #### Single variable boxplots
 
@@ -512,7 +803,7 @@ boxplot <- ggplot(data_all, aes(stroke_recode)) +
 plot(boxplot)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
 #### Two variable boxplots
 
@@ -527,7 +818,7 @@ boxplot_stroke <- ggplot(data_all, aes(x = age, y = stroke_recode, colour = stro
 plot(boxplot_stroke)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
 ### 3. Scatter plots
 
@@ -540,7 +831,7 @@ scatter_plot <- ggplot(data_all, aes(x = age, y = ldl1)) +
 plot(scatter_plot)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
 
 Common things you will see with a scatter plot including the following
 
@@ -562,7 +853,7 @@ plot(scatter_plot_line)
 ## `geom_smooth()` using formula = 'y ~ x'
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 #### Changing the variable names
 
@@ -581,7 +872,7 @@ plot(scatter_plot_variables)
 ## `geom_smooth()` using formula = 'y ~ x'
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 #### Changing the shading of the points
 
@@ -602,7 +893,7 @@ plot(scatter_plot_alpha)
 ## `geom_smooth()` using formula = 'y ~ x'
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 ### 4. Grouping with ggplot2
 
@@ -617,7 +908,12 @@ scatter_plot_gender <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_r
 plot(scatter_plot_gender)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+```
+## Ignoring unknown labels:
+## • fill : "Stroke"
+```
+
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 Faceting by gender
 
@@ -629,7 +925,7 @@ scatter_plot_gender <- ggplot(data_all, aes(x = age, y = ldl1)) +
 plot(scatter_plot_gender)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 ### 5. Colours and themes
 
@@ -650,7 +946,7 @@ scatter_plot_bw <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recod
 plot(scatter_plot_bw)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 **Classic Theme**
 
@@ -663,7 +959,7 @@ scatter_plot_classic <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_
 plot(scatter_plot_classic)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 #### Colours
 
@@ -678,7 +974,7 @@ scatter_plot_gender_brewer <- ggplot(data_all, aes(x = age, y = ldl1, colour = s
 plot(scatter_plot_gender_brewer)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 ### 6. Heat Maps 
 
@@ -699,7 +995,7 @@ ggplot(data = data_heat, aes(id, key, fill = val)) +
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 ## Regression stuff 
 
@@ -804,7 +1100,17 @@ We might also want to plot the results of the final model as coefficients and co
 plot_model(model_final, type="est")
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+```
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## ℹ Please use `linewidth` instead.
+## ℹ The deprecated feature was likely used in the sjPlot package.
+##   Please report the issue at <https://github.com/strengejacke/sjPlot/issues>.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+```
+
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
 ## Interaction terms
 
@@ -886,7 +1192,7 @@ plot_interaction <- interact_plot(model_interaction,
 plot(plot_interaction)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
 
 ## Putting it all together
 
@@ -920,176 +1226,4 @@ For linear regression models there are a number of assumptions we want to check.
 plot(model_final)
 ```
 
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-26-1.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-26-2.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-26-3.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-26-4.png)<!-- -->
-
-## Multilevel Models
-
-
-``` r
-ldl1_age <- ggplot(data_all, aes(x = age, y = ldl1)) + 
-                    geom_point() + 
-                    geom_smooth(method='lm', formula= y~x)
-plot(ldl1_age)
-```
-
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
-
-## Variation between height and weight by health region
-
-
-``` r
-age_ldl1_parent <- ggplot(data_all, aes(x = age, y = ldl1, colour = parent, fill = parent)) + 
-                    geom_point() + 
-                    geom_smooth(method='lm', formula= y~x) + 
-                    theme(legend.position="none")
-plot(age_ldl1_parent)
-```
-
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
-
-## Modelling intercepts
-
-Linear regression. Assumes only one intercept for the entire sample. 
-
-
-``` r
-lm_1 <- lm(ldl1 ~ 1, data = data_all)
-```
-
-Multil-level model. Assumes one intercept for each group. In our case parents, it could be people, neighbourhoods, etc. 
-
-
-``` r
-lme_1 <- lme(ldl1 ~ 1, random = ~ 1 | parent, data = data_all)
-summary(lme_1)
-```
-
-```
-## Linear mixed-effects model fit by REML
-##   Data: data_all 
-##        AIC      BIC    logLik
-##   3047.973 3062.023 -1520.986
-## 
-## Random effects:
-##  Formula: ~1 | parent
-##          (Intercept) Residual
-## StdDev: 0.0001064242 1.616868
-## 
-## Fixed effects:  ldl1 ~ 1 
-##                Value  Std.Error  DF  t-value p-value
-## (Intercept) 107.6775 0.05716491 634 1883.629       0
-## 
-## Standardized Within-Group Residuals:
-##        Min         Q1        Med         Q3        Max 
-## -2.2744593 -1.0374998  0.1994597  0.8179395  2.0548990 
-## 
-## Number of Observations: 800
-## Number of Groups: 634
-```
-
-1. Fixed effects. Our level 1 variables go here. In this case the ~ 1 means model only the intercept.  
-2. Random effects. The intercept is computed at the level of health region (nesting factor), and that health region is treated as a random variable.
-
-
-``` r
-lme_1 <- lme(ldl1 ~ 1, random = ~ 1 | parent, data = data_all)
-```
-
-## Adding level 1 covariates
-
-
-``` r
-lme_2 <- lme(ldl1 ~ age + stroke_recode + smoking, random = ~ 1 | parent, data = data_all)
-summary(lme_2)
-```
-
-```
-## Linear mixed-effects model fit by REML
-##   Data: data_all 
-##       AIC      BIC    logLik
-##   3065.43 3093.508 -1526.715
-## 
-## Random effects:
-##  Formula: ~1 | parent
-##          (Intercept) Residual
-## StdDev: 0.0001815086 1.618026
-## 
-## Fixed effects:  ldl1 ~ age + stroke_recode + smoking 
-##                      Value  Std.Error  DF  t-value p-value
-## (Intercept)      107.58440 0.31432491 633 342.2713  0.0000
-## age               -0.00014 0.00570733 163  -0.0253  0.9799
-## stroke_recodeYes   0.05677 0.12419441 163   0.4571  0.6482
-## smoking            0.13992 0.11666565 163   1.1993  0.2321
-##  Correlation: 
-##                  (Intr) age    strk_Y
-## age              -0.939              
-## stroke_recodeYes -0.262  0.019       
-## smoking          -0.073 -0.053 -0.151
-## 
-## Standardized Within-Group Residuals:
-##        Min         Q1        Med         Q3        Max 
-## -2.3333740 -0.9749368  0.1392195  0.7585044  2.1166741 
-## 
-## Number of Observations: 800
-## Number of Groups: 634
-```
-
-## Plotting fitted versus actual values
-
-
-``` r
-data_all$fitted_lm <- predict(lme_2)
-
-fitted_plot <- ggplot(data_all, aes(x = age, y = ldl1, colour = parent)) + 
-                        geom_point() + 
-                        geom_line(aes(y = fitted_lm, colour = parent)) +
-                        theme(legend.position="none") 
-plot(fitted_plot)
-```
-
-![](intro_to_R_day3_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
-
-### Code for creating synthetic datasets
-
-Not run
-
-```{}
-where <- make.where(data, "all")
-
-method <- make.method(data, where = where)
-method[method == "pmm"] <- "norm"
-
-syn_param <- mice(data, 
-                  m = 10, 
-                  maxit = 1,
-                  method = "cart",
-                  where = where,
-                  printFlag = FALSE)
-
-data2 <- complete(syn_param, 1)
-data3 <- complete(syn_param, 2)
-data4 <- complete(syn_param, 3)
-
-write.csv(data2, "data2.csv")
-write.csv(data3, "data3.csv")
-write.csv(data4, "data4.csv")
-```
-
-### Generating random names
-
-```{}
-names_data <- NULL
-
-names_data$id <- seq(from = 1, to = 800)
-
-names_data$parent <- randomNames(800, 
-                      which.names="first", 
-                      sample.with.replacement=TRUE,
-                      return.complete.data=FALSE) 
-
-names_data <- as.data.frame(names_data)
-
-write.csv(names_data, "names.csv")
-```
-
-
+![](intro_to_R_day3_files/figure-html/unnamed-chunk-36-1.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-36-2.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-36-3.png)<!-- -->![](intro_to_R_day3_files/figure-html/unnamed-chunk-36-4.png)<!-- -->
