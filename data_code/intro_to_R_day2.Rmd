@@ -4,16 +4,17 @@ author: "Daniel Fuller"
 output:
   html_document:
     keep_md: true
+  pdf_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
 library(tidyverse)
 library(gtsummary)
 library(vtable)
 library(readxl)
 library(reportRmd)
 library(infer)
+library(rstatix)
 ```
 
 ## Intro to R Day 2
@@ -25,7 +26,7 @@ Make sure you check your file extension. If you have an excel file use `readxl` 
 #### Tidyverse method
 
 ```{r}
-data1 <- read_csv("data1.csv")
+data1 <- read_csv("dataset1.csv")
 
 ## Difference between Markdown and running code
 #data1 <- read_csv("data_code/data1.csv") 
@@ -34,13 +35,7 @@ data1 <- read_csv("data1.csv")
 #### Base R method
 
 ```{r}
-data1_base <- read.csv("data1.csv", header = TRUE)
-```
-
-#### Excel file
-
-```{r}
-data1_excel <- read_excel("data1.xlsx")
+data1_base <- read.csv("dataset1.csv", header = TRUE)
 ```
 
 ### to see first 10 observations
@@ -52,7 +47,7 @@ head(data1,10)
 ### Importing data set in CSV file named ‘data2’
 
 ```{r}
-data2 <- read_csv("data2.csv")
+data2 <- read_csv("dataset1.csv")
 ```
 
 ### Merging data1 and data2
@@ -61,7 +56,7 @@ First we want to create two artificial datasets to merge. We are just going to s
 
 ```{r}
 data1 <- dplyr::select(data1, id, sex, ethgrp, weight, age, cvd)
-data2 <- dplyr::select(data2, id, stroke, smoking, Cancer, ldl1, ldl2, gender)
+data2 <- dplyr::select(data2, id, stroke, smoking, Cancer, ldl1, ldl2)
 ```
 
 ### Joining data 
@@ -74,19 +69,16 @@ data_merge <- dplyr::full_join(data1, data2)
 data_merge1 <- dplyr::full_join(data1, data2, by = join_by(id))
 
 data_merge2 <- dplyr::full_join(data1, data2,by = join_by(id == id))
+
+vt(data_merge)
 ```
 
-### importing test data
+### Importing test data
 
 ```{r}
 test <- read_csv("test.csv")
 head(test,10)
 glimpse(test)
-
-st(test) ## vtable package
-rm_covsum(data = test, 
-          covs = c('age', 'sex', 'stroke', 'Cancer', 'cvd'),
-          show.tests=TRUE)         ## reportRmd package
 ```
 
 ### Create categorial variable ‘agecat’ using age
@@ -99,11 +91,13 @@ Here we are introducing three new things `%>%` (`pipe operator`), `mutate`, and 
 
 ```{r}
 ### Tidyverse Method
-test |> summary(age)
+test %>% summary(age)
 
 ### Base R Method
-summary(test, age)
+summary(test$age)
 ```
+
+#### Recoding Age
 
 ```{r}
 test <- test %>% 
@@ -114,6 +108,8 @@ test <- test %>%
             age >= 60 & age < 65 ~ "60-64",  
             TRUE ~ "65+"
           ))
+
+table(test$age, test$age_cat)
 ```
 
 ```{r}
@@ -127,9 +123,6 @@ count(test, age_cat)
 ### Writing a test to see if that worked
 
 ```{r}
-### Tidyverse Method
-#test %>% table(age, age_cat)
-
 ### Base R Method
 table(test$age, test$age_cat)
 ```
@@ -148,24 +141,74 @@ table(test$gender)
 table(test$gender, test$stroke)
 ```
 
-#### Chi-square test between gender and stroke
+#### Recoding other variables
+
+#### Recoding Ethnicity
+
+```{r}
+table(test$ethgrp)
+
+test <- test %>% 
+          mutate(ethnicity = case_when(
+            ethgrp == 1 ~ "Black",
+            ethgrp == 2 ~ "White",
+            ethgrp == 3 ~ "Other"
+          ))
+
+table(test$ethgrp, test$ethnicity)
+```
+
+## Create a table 1
+
+### vtable package
+
+```{r}
+st(test) 
+```
+
+### reportRmd package
+
+```{r}
+rm_covsum(data = test, 
+          covs = c('age', 'gender', 'ethnicity', 'stroke', 'Cancer', 'cvd'),
+          show.tests=TRUE)        
+```
+
+### Chi-square test 
 
 Lots of the previous existing packages work with traditional coding rather than Tidyverse style. Here we are going to work on some of those older methods. If you want to use the newer versions use the [infer](https://infer.tidymodels.org/index.html) package. 
+
+> A chi-squared test (also chi-square or χ2 test) is a statistical hypothesis test used in the analysis of contingency tables when the sample sizes are large. In simpler terms, this test is primarily used to examine whether two categorical variables (two dimensions of the contingency table) are independent in influencing the test statistic. [Wiki](https://en.wikipedia.org/wiki/Chi-squared_test)
 
 ```{r}
 ### Tidyverse
 test$stroke_factor <- as.factor(test$stroke)
-chisq_test(test, gender ~ stroke_factor)
+
+table(test$gender, test$stroke)
+
+infer::chisq_test(test, gender ~ stroke_factor)  ## Not on conflicting packages
 
 ### Base R
 chisq.test(test$gender, test$stroke)
 ```
 
-# Fishers exact test
+### Fishers exact test
+
+> Fisher's exact test is a statistical significance test used in the analysis of contingency tables. Although in practice it is employed when sample sizes are small, it is valid for all sample sizes. [Wiki](https://en.wikipedia.org/wiki/Fisher%27s_exact_test)
 
 ```{r}
+xtab <- table(test$gender, test$stroke)
+
+### Tidyverse
+fisher_test(xtab, detailed = TRUE)
+
+### Base R
 fisher.test(test$gender, test$stroke)
 ```
+
+## Shapiro Wilk Test
+
+> The null-hypothesis of this test is that the population is normally distributed. If the p value is less than the chosen alpha level, then the null hypothesis is rejected and there is evidence that the data tested are not normally distributed.[Wiki](https://en.wikipedia.org/wiki/Shapiro%E2%80%93Wilk_test)
 
 #### First, we check if data follow Normal distribution
 #### Normality test (if p>0.05: data are normally distributed)
@@ -180,7 +223,7 @@ hist_age_gender <- ggplot(test, aes(age)) +
 plot(hist_age_gender)
 ```
 
-#### Shapiro test females
+### Shapiro test females
 
 ```{r}
 test_data_female <- filter(test, gender == "f")
@@ -188,12 +231,15 @@ shapiro.test(test_data_female$age)
 ```
 
 #### Shapiro test males
+
 ```{r}
 test_data_male <- filter(test, gender == "m")
 shapiro.test(test_data_male$age)
 ```
 
-### t-test
+## t-test
+
+> Student's t-test is a statistical test used to test whether the difference between the response of two groups is statistically significant or not. It is any statistical hypothesis test in which the test statistic follows a Student's t-distribution under the null hypothesis. [Wiki](https://en.wikipedia.org/wiki/Student%27s_t-test)
 
 Lots of things we can do with t-tests. Generic formalution for many tests is `test_function`(`variable1` ~ `variable1`, data = `my_data`)
 
@@ -209,11 +255,16 @@ var.test(age ~ gender, data = test)
 ```
 
 ### Variances are equal based on the test
+
 ```{r}
 t.test(age ~ gender, data = test, var.equal = TRUE)
 ```
 
+## Wilcoxon signed-rank test
+
 ### Non-parametric test if data are not normally distributed
+
+> The Wilcoxon signed-rank test is a non-parametric rank test for statistical hypothesis testing used either to test the location of a population based on a sample of data, or to compare the locations of two populations using two matched samples. The one-sample version serves a purpose similar to that of the one-sample Student's t-test. For two matched samples, it is a paired difference test like the paired Student's t-test (also known as the "t-test for matched pairs" or "t-test for dependent samples"). [Wiki](https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test)
 
 ```{r}
 wilcox.test(age ~ gender, data = test)
@@ -225,19 +276,28 @@ wilcox.test(age ~ gender, data = test)
 t.test(test$ldl1, test$ldl2, paired = TRUE, var.equal = FALSE)
 ```
 
-### Pearson correlation coefficient
+## Pearson correlation coefficient
+
+> In statistics, the Pearson correlation coefficient is a correlation coefficient that measures linear correlation between two sets of data. It is the ratio between the covariance of two variables and the product of their standard deviations; thus, it is essentially a normalized measurement of the covariance, such that the result always has a value between −1 and 1. [Wiki](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
+
 ```{r}
 cor.test(test$ldl1, test$ldl2,  method = "pearson") 
 ```
 
-### Spearman correlation coefficient
+## Spearman correlation coefficient
+
+> In statistics, Spearman's rank correlation coefficient or Spearman's ρ is a number ranging from -1 to 1 that indicates how strongly two sets of ranks are correlated. It could be used in a situation where one only has ranked data, such as a tally of gold, silver, and bronze medals. [Wiki](https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
+
 ```{r}
 cor.test(test$ldl1, test$ldl2,  method = "spearman") 
 ```
 
 ## Linear regression
 
-Conduct linear regression model between dependent and independent variables. Age is continuous, gender is categorical, ldl is continuous variable
+Conduct linear regression model between dependent and independent variables. Age is continuous, gender is categorical, ldl is continuous variable.
+
+> In statistics, linear regression is a model that estimates the relationship between a scalar response (dependent variable) and one or more explanatory variables (regressor or independent variable). A model with exactly one explanatory variable is a simple linear regression; a model with two or more explanatory variables is a multiple linear regression. This term is distinct from multivariate linear regression, which predicts multiple correlated dependent variables rather than a single dependent variable. [Wiki](https://en.wikipedia.org/wiki/Linear_regression#Estimation_methods)
+
 ```{r}
 linear_model <- lm(age ~ as.factor(gender) + ldl1, data = test)
 summary(linear_model)
@@ -247,6 +307,8 @@ gtsummary::tbl_regression(linear_model)
 
 ## Logistic regression
 
+> In statistics, a logistic model (or logit model) is a statistical model that models the log-odds of an event as a linear combination of one or more independent variables. In regression analysis, logistic regression (or logit regression) estimates the parameters of a logistic model (the coefficients in the linear or non linear combinations). [Wiki](https://en.wikipedia.org/wiki/Logistic_regression)
+
 ```{r}
 logistic_model <- glm(Cancer ~ as.factor(gender) + ldl1 + smoking, data = test, family = "binomial")
 summary(logistic_model)
@@ -255,9 +317,9 @@ summary(logistic_model)
 ### Get ORs
 
 #### Old School Way
+
 ```{r}
 exp(cbind(OR = coef(logistic_model), confint(logistic_model)))
-
 ```
 
 #### New School Way
@@ -267,6 +329,8 @@ tbl_regression(logistic_model, exponentiate = TRUE)
 
 ### One-way ANOVA
 
+> In statistics, one-way analysis of variance (or one-way ANOVA) is a technique to compare whether two or more samples' means are significantly different (using the F distribution). This analysis of variance technique requires a numeric response variable "Y" and a single explanatory variable "X", hence "one-way". [Wiki](https://en.wikipedia.org/wiki/One-way_analysis_of_variance)
+
 Pass arguments to aov() function for an ANOVA test
 
 ```{r}
@@ -274,7 +338,9 @@ one_anova <- aov(age ~ ethgrp, data = test)
 summary(one_anova)
 ```
 
-### Non-parametric ANOVA
+### Non-parametric ANOVA (Kruskal–Wallis test)
+
+> The Kruskal–Wallis test by ranks, Kruskal–Wallis H {\displaystyle H} test (named after William Kruskal and W. Allen Wallis), or one-way ANOVA on ranks is a non-parametric statistical test for testing whether samples originate from the same distribution. It is used for comparing two or more independent samples of equal or different sample sizes. It extends the Mann–Whitney U test, which is used for comparing only two groups. [Wiki](https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_test)
 
 ```{r}
 kruskal.test(age ~ ethgrp, data = test)
