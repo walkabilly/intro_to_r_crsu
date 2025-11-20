@@ -21,15 +21,19 @@ By the completion of this course, students will be expected to
 ## Course material
 
 * Download the syllabus [here](https://github.com/walkabilly/intro_to_r_crsu/blob/main/Syllabus%20Template_R_2025_final.pdf)
-* Folder for [Data](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data)
+* Folder for [Data](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data_code)
     * [data1.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data1.csv) and [data1.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data1.xlsx)
     * [data2.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data2.csv) and [data2.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data2.xlsx)
     * [test.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/test.csv)
-* Folder for [Code](https://github.com/walkabilly/intro_to_r_crsu/tree/main/code)
+* Folder for [Code](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data_code)
     * Day 1 R script: [data_1_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/day_1_script.R)
     * Day 2 R script: [data_2_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/day_2_script.R)
-    * Day 2 RMarkdown: [intro_to_R_day2](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day2.Rmd)
-    * Day 3 RMarkdown: [intro_to_R_day3](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day3.Rmd)
+    * Day 2: 
+        * RMarkdown [intro_to_R_day2](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day2.Rmd)
+        * Nice Markdown [intro_to_R_day2](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day2.md)
+    * Day 3 RMarkdown: 
+        * RMarkdown [intro_to_R_day3](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day3.Rmd)
+        * Nice Markdown [intro_to_R_day3](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/intro_to_R_day3.md)
 * Folder for [Slides](https://github.com/walkabilly/intro_to_r_crsu/tree/main/slides)
     * [Day 1 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day1.pdf)
     * [Day 2 Slides](https://github.com/walkabilly/intro_to_r_crsu/blob/main/slides/Day2.pdf)
