@@ -22,8 +22,8 @@ By the completion of this course, students will be expected to
 
 * Download the syllabus [here](https://github.com/walkabilly/intro_to_r_crsu/blob/main/Syllabus%20Template_R_2025_final.pdf)
 * Folder for [Data](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data_code)
-    * [data1.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data1.csv) and [data1.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data1.xlsx)
-    * [data2.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data2.csv) and [data2.xlsx](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/data2.xlsx)
+    * [dataset1.csv]((https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/dataset1.csv) 
+    * [data2.csv]((https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/dataset2.csv) 
     * [test.csv](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/test.csv)
 * Folder for [Code](https://github.com/walkabilly/intro_to_r_crsu/tree/main/data_code)
     * Day 1 R script: [data_1_script.R](https://github.com/walkabilly/intro_to_r_crsu/blob/main/data_code/day_1_script.R)
