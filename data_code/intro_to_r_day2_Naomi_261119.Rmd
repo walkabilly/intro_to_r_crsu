@@ -1,0 +1,160 @@
+---
+title: "Intro to R Day2"
+author: "Naomi Seula Lee"
+date: "2026.11.20"
+output: 
+  html_document:
+    keep_md: true
+  pdf_document: default
+---
+
+# What
+## does
+### this
+#### do? 
+
+plain text
+
+*Italicized text*
+
+**bold text**
+
+***bold and italic***
+
+- First item
+- Second item
+
+1. First step
+2. Second step
+
+`mean()` is an R function
+
+- warning = FALSE -> do not show warning messages in the final output
+- error = FALSE -> if there's an error, stop the knit / error = TRUE -> if there's an error, keep knitting and show the error message in the final output
+- message = FALSE -> do not show informational messages, such as package start up messages, in the final output
+- echo = FALSE -> hide the code, but still shows the results
+- echo = TRUE -> show the code and the results
+- include = FALSE -> execute the code, but do not show the code and the results in the final doc
+
+#### Required packages
+```{r required packages, warning = FALSE, error = FALSE}
+library(tidyverse)
+library(gtsummary)
+library(vtable)
+library(readxl)
+library(reportRmd)
+library(infer)
+library(rstatix)
+```
+
+```{r load the data}
+test <- read_csv("test.csv")
+head(test, 10)
+glimpse(test)
+vtable(test)
+```
+
+```{r create categorical variable for age}
+test <- test %>% mutate(age_cat = case_when(
+  is.na(age) ~ NA_character_,
+  age < 45 ~ "<45",
+  age >= 45 & age < 50 ~ "45-49",
+  age >= 50 & age < 55 ~ "50-54",
+  age >= 55 & age < 60 ~ "55-59",
+  age >= 60 & age < 65 ~ "60-64",
+  TRUE ~ "65+"
+))
+
+table(test$age, test$age_cat)
+```
+
+```{r recoding ethnicity variable}
+test <- test %>% mutate(ethnicity = case_when(
+  ethgrp == 1 ~ "Black",
+  ethgrp == 2 ~ "White",
+  ethgrp == 3 ~ "Other"
+))
+
+table(test$ethgrp, test$ethnicity)
+```
+
+```{r chi-square test}
+test$stroke_factor <- as.factor(test$stroke)
+
+table(test$gender, test$stroke)
+table(test$gender, test$stroke_factor)
+
+infer::chisq_test(test, gender ~ stroke_factor) # from infer package
+chisq.test(test$gender, test$stroke) # base R version
+```
+```{r fishers test}
+xtab <- table(test$gender, test$stroke)
+fisher_test(xtab, detailed = TRUE) # tidyverse version
+
+fisher.test(test$gender, test$stroke) # base R version
+```
+
+```{r shapiro wilk test}
+test_data_female <- filter(test, gender == "f")
+shapiro.test(test_data_female$age)
+```
+
+```{r t-test}
+t.test(age ~ gender, data = test, var.equal = FALSE)
+var.test(age ~ gender, data = test)
+t.test(age ~ gender, data = test, var.equal = TRUE)
+```
+
+```{r correlation}
+cor.test(test$ldl1, test$ldl2, method = "spearman")
+cor.test(test$ldl1, test$ldl2, method = "pearson")
+```
+
+## Linear regression
+
+```{r linear regression}
+linear_model <- lm(age ~ as.factor(gender) + ldl1, data = test)
+summary(linear_model)
+gtsummary::tbl_regression(linear_model)
+```
+
+```{r logistic regression}
+logistic_model <- glm(Cancer ~ as.factor(gender) + ldl1 + smoking, data = test, family = "binomial")
+summary(logistic_model)
+gtsummary::tbl_regression(logistic_model)
+exp(cbind(OR = coef(logistic_model), confint(logistic_model)))
+gtsummary::tbl_regression(logistic_model, exponentiate = TRUE)
+```
+
+```{r one way ANOVA}
+one_anova <- aov(age ~ ethgrp, data = test)
+summary(one_anova)
+```
+
+```{r non-parametric ANOVA}
+kruskal.test(age ~ ethgrp, data = test)
+```
+
+#### Exercise 1
+Using the test dataset:
+
+1. Add a heading called "Age Distribution"
+2. Insert an R code chunk and create a histogram of age using ggplot
+3. Add labels (title, x-axis, and y-axis)
+4. Add one sentence description of the histogram
+5. Knit and check if the plot and the code are visible. 
+
+## Age Distribution
+
+```{r age distribution histogram}
+age_distribution <- ggplot(test, aes(x = age)) +
+  geom_histogram(binwidth = 5, color = "white", fill = "blue") +
+  labs(
+    title = "Age Distribution",
+    x = "Age (years)",
+    y = "Count"
+  )
+
+age_distribution
+```
+
