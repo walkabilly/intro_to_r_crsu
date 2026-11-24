@@ -1,0 +1,437 @@
+---
+title: "Intro to R Day 3"
+author: "Naomi Lee"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### required packages
+```{r packages, warning = FALSE, error = FALSE}
+library(tidyverse)
+
+### reading in other datasets (SPSS, Stata, excel etc)
+library(haven)
+library(readxl)
+library(httpuv)
+library(googlesheets4)
+
+### handling missing data
+library(visdat)
+library(naniar)
+
+### visualizing regression
+library(gtsummary)
+library(sjPlot)
+library(interactions)
+library(cardx)
+library(randomNames)
+```
+
+## Read data from other sources
+```{r read data from other sources}
+data_spss <- read_sav("data_spss.sav")
+data_sas <- read_xpt("data_sas.xpt")
+data_stata <- read_dta("data_stata.dta")
+data_excel <- read_excel("data_all.xlsx", sheet = "data_all")
+# data_google <- read_sheet("https://docs.google.com/spreadsheets/d/1-CYSw9oUVtNcNTy3s9LBEbKdrdP6uNpWj_ZG_tRHTt0/edit?gid=292211844#gid=292211844")
+```
+
+## Missing data
+```{r exploring missing data 1}
+# NaN (Not a Number): NA means the value is missing. NaN means a calculation did not produce a defined numerical value
+x <- log(c(1, -1, NA))
+x
+is.nan(x)
+
+# Inf (infinite numbers)
+y <- c(-Inf, 0, Inf)
+is.infinite(y)
+```
+
+```{r exploring missing data 2}
+data_missing <- read_csv("data_missing.csv")
+missing_table <- miss_var_summary(data_missing)
+missing_table
+
+#visualize entire dataframe
+vis_dat(data_missing)
+```
+
+## Data Wrangling
+```{r data wrangling}
+data1 <- read_csv("dataset1.csv")
+data2 <- read_csv("dataset2.csv")
+data3 <- read_csv("dataset3.csv")
+data4 <- read_csv("dataset4.csv")
+
+# merge dataset
+data_all <- bind_rows(data1, data2, data3, data4)
+```
+
+```{r advanced}
+# find csv files whose names match the pattern
+paths <- list.files(pattern = "dataset.*\\.csv", full.names = TRUE)
+paths
+
+# read each file and store the resulting dataset in a list
+files <- map(paths, read_csv)
+length(files) # check how many files were read and stored
+
+# stack the datasets by rows (rbind)
+data_test <- list_rbind(files) # when we use join, it matches with a key such as ID. Here, it's more like appending the dataset in rows from multiple files
+summary(data_test)
+```
+
+```{r join by ID}
+names_data <- read_csv("names.csv")
+glimpse(names_data) # we inspect the dataset: dimensions, column names, types, and values
+
+# left_join keeps all rows in the first dataset, and add columns from names_data, and they match rows using 'id' field
+# left_join(): keeps all rows from the left dataset
+# full_join(): keeps all rows from both datasets
+data_all <- left_join(data_all, names_data, by = join_by(id))
+table(data_all$parent)
+```
+
+## Data Visualization
+
+```{r data viz 1 bar graph}
+data_all <- data_all %>%
+  mutate(stroke_recode = case_when(
+    stroke == "1" ~ "Yes",
+    stroke == "0" ~ "No"
+  ))
+
+data_all$stroke_recode <- as_factor(data_all$stroke_recode)
+table(data_all$stroke, data_all$stroke_recode)
+
+bar_stroke <- ggplot(data_all, aes(stroke_recode)) +
+  geom_bar() +
+  labs(x = "Has had a stroke") +
+  theme(axis.text.x = element_text(angle = 0)) 
+# you can change font, background, legend, grid, etc with theme
+plot(bar_stroke)
+```
+
+```{r ggplot theme}
+bar_stroke <- ggplot(data_all, aes(x = stroke_recode)) +
+  geom_bar() +
+  labs(
+    title = "Stroke History",
+    x = "Has had a stroke",
+    y = "Count"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    panel.grid.minor = element_blank()
+  )
+plot(bar_stroke)
+
+bar_stroke + theme_minimal()
+bar_stroke + theme_classic()
+bar_stroke + theme_bw()
+```
+
+```{r data viz 2 box plot}
+# single var box plot
+boxplot <- ggplot(data_all, aes(stroke_recode)) +
+  geom_boxplot() + 
+  coord_flip()
+
+plot(boxplot)
+
+# box plot is most effective in showing the distribution of one 'continuous' variable
+boxplot <- ggplot(data_all, aes(age)) +
+  geom_boxplot() +
+  coord_flip() +
+  labs(x = "Age") +
+  theme_classic()
+
+plot(boxplot)
+
+# two vars box plot
+boxplot_stroke <- ggplot(data_all, aes(x = age, y = stroke_recode, colour = stroke_recode)) +
+  geom_boxplot() + 
+  coord_flip() +
+  theme_classic()
+
+plot(boxplot_stroke)
+```
+
+```{r data viz 3 scatter plot}
+scatter_plot <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point()
+plot(scatter_plot)
+
+scatter_plot <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(
+    alpha = 0.2, # alpha controls transparency 
+    position = position_jitter()) # jitter reveals overlapping obs by slightly shifting their plotted position
+plot(scatter_plot)
+
+scatter_plot <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(
+    alpha = 0.2, # alpha controls transparency 
+    position = position_jitter(width = 0.3, height = 0, seed =123)) # here, we only shift point horizontally, keeping LDL value (y) unchanged
+plot(scatter_plot)
+
+# regression line
+scatter_plot_line <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(position = position_jitter()) +
+  geom_smooth(color = "red") +
+  geom_smooth(method = "lm", color = "#088da5")
+plot(scatter_plot_line)
+
+scatter_plot_line2 <- scatter_plot +
+  geom_smooth(color = "red") +
+  geom_smooth(method = "lm", color = "#088da5")
+plot(scatter_plot_line2)
+
+scatter_plot_line3 <- scatter_plot +
+  geom_smooth(color = "red", se = FALSE) +
+  geom_smooth(method = "lm", color = "#088da5", se = FALSE)
+plot(scatter_plot_line3)
+```
+
+```{r changing the axis labels}
+scatter_plot_variables <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(position = position_jitter()) +
+  geom_smooth(color = "red") +
+  geom_smooth(method = "lm", color = "#088da5") +
+  labs(x = "Age", y = "LDL Cholesterol")
+plot(scatter_plot_variables)
+
+scatter_plot_variables2 <- scatter_plot_line +
+  labs(x = "Age", y = "LDL Cholesterol")
+plot(scatter_plot_variables2)
+```
+
+```{r changing the shading of the points}
+scatter_plot_alpha <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(alpha = 0.2, position = position_jitter()) +
+  geom_smooth(color = "red") + 
+  geom_smooth(method = "lm", color = "#088da5") + 
+  labs(x = "Age", y = "LDL cholesterol")
+plot(scatter_plot_alpha)
+```
+
+```{r grouping with ggplot2}
+# coloring
+scatter_plot_stroke <- ggplot(data_all, aes(x = age, y = ldl1, color = stroke_recode)) +
+  geom_point(alpha = 0.2, position = position_jitter()) +
+  labs(x = "Age", y = "LDL Cholesterol", fill = "Stroke")
+plot(scatter_plot_stroke)
+
+# faceting
+scatter_plot_stroke2 <- ggplot(data_all, aes(x = age, y = ldl1)) +
+  geom_point(alpha = 0.2, position = position_jitter()) +
+  labs(x = "Age", y = "LDL Cholesterol") +
+  facet_wrap(~ stroke_recode)
+plot(scatter_plot_stroke2)
+```
+
+```{r colors and themes}
+# black and white
+scatter_plot_bw <- ggplot(data_all, aes(x = age, y = ldl1, color = stroke_recode)) +
+  geom_point(alpha = 0.2, position = position_jitter()) +
+  labs(x = "Age", y = "LDL Cholesterol", color = "Stroke") +
+  theme_bw()
+plot(scatter_plot_bw)
+
+# classic
+scatter_plot_classic <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
+                  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") +
+                  theme_classic()
+plot(scatter_plot_classic)
+
+# manual color setting
+scatter_plot_manual <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) + 
+                  geom_point(alpha = 0.2, position = position_jitter()) + 
+                  scale_colour_manual(values = c("#E69F00", "#56B4E9")) +
+                  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") 
+plot(scatter_plot_manual)
+
+# Use a ColorBrewer palette 
+scatter_plot_brewer <- ggplot(data_all, aes(x = age, y = ldl1, colour = stroke_recode)) +
+  geom_point(alpha = 0.2, position = position_jitter()) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(x = "Age", y = "LDL Cholesterol", colour = "Stroke") +
+  theme_classic()
+
+plot(scatter_plot_brewer)
+
+scatter_plot_brewer + scale_colour_brewer(palette = "Dark2")
+scatter_plot_brewer + scale_colour_brewer(palette = "Set2")
+```
+
+```{r heat maps}
+data_heat <- data_all %>% select(id, ldl1, ldl2)
+head(data_heat)
+
+data_heat <- data_heat %>%
+  dplyr::mutate(id = row_number()) %>%
+  gather(-id, key = "key", value = "val") %>% 
+  mutate(isna = is.na(val))
+head(data_heat)
+
+data_heat2 <- data_all %>%
+  mutate(id = row_number()) %>%
+  select(id, ldl1, ldl2) %>%
+  pivot_longer(
+    cols = c(ldl1, ldl2),
+    names_to = "measurement",
+    values_to = "ldl"
+  )
+
+# Here, both functions (gather and pivot_longer) reshape data from wide to long format. The column names become values in one new column, and the measurements go into another. The ID stays attached to each measurement.
+
+ggplot(data = data_heat, aes(id, key, fill = val)) +
+  geom_tile(alpha=1) +
+  labs(x = "Person", y = "LD 1 and 2") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+ggplot(data_heat2, aes(x = id, y = measurement, fill = ldl)) +
+  geom_tile() +
+  labs(x = "Observation", y = "Measurement", fill = "LDL") +
+  theme_minimal()
+```
+
+## Regression stuff
+
+```{r bivariable association}
+univ_table <- data_all %>%
+  select(ldl1, sex, ethgrp, age, smoking, Cancer, stroke_recode) %>%
+  tbl_uvregression( # tbl_uvregression fit a separate model for each predictor, with ldl1 as the outcome
+    method = glm,
+    y = ldl1,
+    method.args = list(family = gaussian)
+  )
+
+univ_table
+
+univ_table %>% 
+  bold_labels() %>%
+  modify_caption("**Unadjusted associations with LDL cholestrerol**")
+
+univ_table %>%
+  bold_labels() %>%
+  as_gt() %>%
+  gt::tab_options(
+    table.font.size = gt::px(14),
+    data_row.padding = gt::px(8)
+  )
+
+univ_table %>% as_kable()
+
+summary(glm(ldl1 ~ sex, data = data_all))
+```
+
+```{r creating a final model}
+model_final <- glm(ldl1 ~ sex + ethgrp + age + smoking + Cancer + stroke_recode,
+                   data = data_all, 
+                   family = "gaussian")
+
+summary(model_final)
+
+str(data_all) #check if categorical variables are well-coded
+
+data_all <- data_all %>%
+  mutate(ethnicity = factor(ethgrp),
+         cancer_recode = factor(Cancer),
+         smoking_recode = factor(smoking))
+
+model_final2 <- glm(ldl1 ~ sex + ethnicity + age + smoking_recode + cancer_recode + stroke_recode, 
+                    data = data_all,
+                    family = "gaussian")
+
+summary(model_final2)
+
+multi_table <- tbl_regression(model_final)
+multi_table2 <- tbl_regression(model_final2)
+
+multi_table %>% as_kable()
+multi_table2 %>% as_kable()
+```
+
+```{r ploting the final model}
+plot_model(model_final, type = "est")
+
+plot_model(model_final2, type = "est")
+```
+
+```{r interaction terms}
+# Interaction: does the association between smoking and LDL differ by cancer status?
+model_interaction <- glm(ldl1 ~ sex + ethgrp + age + smoking*Cancer + stroke_recode,
+                         data = data_all,
+                         family = "gaussian")
+summary(model_interaction)
+
+inter_table <- tbl_regression(model_interaction) 
+inter_table %>% as_kable()
+
+plot_interaction <- interact_plot(model_interaction,
+                                  pred = smoking, 
+                                  modx = Cancer,
+                                  plot.points = TRUE,
+                                  partial.residuals = TRUE,
+                                  interval = TRUE,
+                                  int.width = 0.95)
+
+plot(plot_interaction)
+```
+
+```{r interaction terms 2}
+model_interaction2 <- glm(ldl1 ~ sex + ethnicity + age + smoking_recode*cancer_recode + stroke_recode,
+                         data = data_all,
+                         family = "gaussian")
+summary(model_interaction2)
+
+inter_table2 <- tbl_regression(model_interaction2) 
+inter_table2 %>% as_kable()
+
+plot_interaction2 <- interactions::cat_plot(
+  model_interaction2,
+  pred = smoking_recode,
+  modx = cancer_recode,
+  interval = TRUE,
+  int.width = 0.95
+)
+
+plot(plot_interaction2)
+```
+
+
+```{r plot them all together}
+# Unadjusted models using the same recoded variables
+univ_table2 <- data_all %>%
+  select(
+    ldl1, sex, ethnicity, age,
+    smoking_recode, cancer_recode, stroke_recode
+  ) %>%
+  tbl_uvregression(
+    method = glm,
+    y = ldl1,
+    method.args = list(family = gaussian())
+  )
+
+# Combine the three tables side by side
+tbl_univ_multi_inter2 <- tbl_merge(
+  tbls = list(univ_table2, multi_table2, inter_table2),
+  tab_spanner = c(
+    "**Unadjusted**",
+    "**Adjusted**",
+    "**With interaction**"
+  )
+)
+
+tbl_univ_multi_inter2
+```
+
